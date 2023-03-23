@@ -11,7 +11,7 @@ from torchvision import transforms
 
 from my_dataset import MyDataSet
 from vit_model import vit_base_patch16_224_in21k as create_model
-from utils import read_split_data, train_one_epoch, evaluate
+from utils import read_split_data, read_data, train_one_epoch, evaluate
 
 
 def main(args):
@@ -22,7 +22,7 @@ def main(args):
 
     tb_writer = SummaryWriter()
 
-    train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
+    train_images_path, train_images_label, val_images_path, val_images_label = read_data(args.data_path)
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -124,11 +124,11 @@ if __name__ == '__main__':
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="data/Train")
+                        default="/home/hkb/MyFireNet/Datasets/MyDatasets")
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='/home/hkb/Flower-Classification/weights/vit_base_patch16_224_in21k.pth',
+    parser.add_argument('--weights', type=str, default='/home/hkb/MyFireNet/VIT/weights/vit_base_patch16_224_in21k.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=True)

@@ -3,3 +3,6 @@ VIT/weights/
 Model/
 Results/
 .ipynb_checkpoints/
+runs/
+VIT/__pycache__/
+VIT/class_indices.json
