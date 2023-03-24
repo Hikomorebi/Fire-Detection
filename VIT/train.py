@@ -1,10 +1,11 @@
 import os
 import math
 import argparse
-
+import shutil
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
+import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
@@ -15,6 +16,14 @@ from utils import read_split_data, read_data, train_one_epoch, evaluate
 
 
 def main(args):
+
+    acc_list_train = []
+    acc_list_val = []
+    FP_list = []
+    FN_list = []
+    Recall_list = []
+    Precision_list = []
+    F_list = []
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
 
     if os.path.exists("./weights") is False:
@@ -98,11 +107,19 @@ def main(args):
         scheduler.step()
 
         # validate
-        val_loss, val_acc = evaluate(model=model,
-                                     data_loader=val_loader,
-                                     device=device,
-                                     epoch=epoch)
-
+        val_loss, val_acc, TN, FN, FP, TP, FN_imgs, FP_imgs = evaluate(model=model,
+                                                     data_loader=val_loader,
+                                                     device=device,
+                                                     epoch=epoch)
+        acc_list_train.append(train_acc)
+        acc_list_val.append(val_acc)
+        FP_list.append(round(FP/(FP+TN+TP+FN),4))
+        FN_list.append(round(FN/(TP+FN+FP+TN),4))
+        P = TP/(TP+FP)
+        R = TP/(TP+FN)
+        Recall_list.append(round(R,4))
+        Precision_list.append(round(P,4))
+        F_list.append(round(((2*P*R)/(P+R)),4))
         tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
         tb_writer.add_scalar(tags[0], train_loss, epoch)
         tb_writer.add_scalar(tags[1], train_acc, epoch)
@@ -110,13 +127,41 @@ def main(args):
         tb_writer.add_scalar(tags[3], val_acc, epoch)
         tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
-        torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
+        torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
+
+    x = [i for i in range(args.epochs)]
+    plt.figure(figsize = (10,12))
+    plt.plot(x,acc_list_train,'r',x,acc_list_val,'g')
+    plt.title('train(red) val(green)')
+    plt.ylabel('accuracy')
+    plt.xlabel("epoch")
+    plt.savefig('./results/figure.png')
+    index = acc_list_val.index(max(acc_list_val))
+    print("Accuracy:\t %.4f"%acc_list_val[index])
+    print("False Positives:",FP_list[index])
+    print("Fales Negatives:",FN_list[index])
+    print("Recall:\t\t",Recall_list[index])
+    print("Precision:\t",Precision_list[index])
+    print("F-measure:\t",F_list[index])
+
+    # 存储错误分类的图像
+    FN_img_path = './error/FN'
+    FP_img_path = './error/FP'
+    if not os.path.exists(FN_img_path):
+        os.mkdir(FN_img_path)
+    if not os.path.exists(FP_img_path):
+        os.mkdir(FP_img_path)
+    for img_path in FN_imgs:
+        shutil.copy(img_path, FN_img_path)
+    for img_path in FP_imgs:
+        shutil.copy(img_path, FP_img_path)
+
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=2)
-    parser.add_argument('--epochs', type=int, default=10)
+    parser.add_argument('--epochs', type=int, default=8)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)

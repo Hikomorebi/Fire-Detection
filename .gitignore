@@ -1,8 +1,12 @@
 Datasets/
-VIT/weights/
 Model/
 Results/
 .ipynb_checkpoints/
 runs/
 VIT/__pycache__/
 VIT/class_indices.json
+VIT/models/
+VIT/results/
+VIT/weights/
+VIT/runs/
+VIT/test.py

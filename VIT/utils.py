@@ -203,7 +203,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch):
     sample_num = 0
     data_loader = tqdm(data_loader, file=sys.stdout)
     for step, data in enumerate(data_loader):
-        images, labels = data
+        images, labels,img_paths = data
         sample_num += images.shape[0]
 
         pred = model(images.to(device))
@@ -230,6 +230,10 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch):
 
 @torch.no_grad()
 def evaluate(model, data_loader, device, epoch):
+    FP = torch.zeros(1).to(device)
+    FN = torch.zeros(1).to(device)
+    TP = torch.zeros(1).to(device)
+    TN = torch.zeros(1).to(device)
     loss_function = torch.nn.CrossEntropyLoss()
 
     model.eval()
@@ -239,19 +243,41 @@ def evaluate(model, data_loader, device, epoch):
 
     sample_num = 0
     data_loader = tqdm(data_loader, file=sys.stdout)
+    FN_imgs = []
+    FP_imgs = []
     for step, data in enumerate(data_loader):
-        images, labels = data
+        images, labels, img_paths = data
         sample_num += images.shape[0]
 
         pred = model(images.to(device))
         pred_classes = torch.max(pred, dim=1)[1]
-        accu_num += torch.eq(pred_classes, labels.to(device)).sum()
 
         loss = loss_function(pred, labels.to(device))
         accu_loss += loss
 
+        zes=torch.zeros(labels.size(0)).type(torch.LongTensor).to(device)
+        ons=torch.ones(labels.size(0)).type(torch.LongTensor).to(device)
+
+        FN_indices = torch.where(((pred_classes==ons)&(labels.to(device)==zes)) == 1)[0].tolist()
+        FP_indices = torch.where(((pred_classes==zes)&(labels.to(device)==ons)) == 1)[0].tolist()
+        for i in FN_indices:
+            FN_imgs.append(img_paths[i])
+        for i in FP_indices:
+            FP_imgs.append(img_paths[i])
+        
+
+        train_correct01 = ((pred_classes==zes)&(labels.to(device)==ons)).sum() #原标签为1，预测为0
+        train_correct10 = ((pred_classes==ons)&(labels.to(device)==zes)).sum() #原标签为0，预测为1
+        train_correct00 = ((pred_classes==zes)&(labels.to(device)==zes)).sum() #原标签为0，预测为0
+        train_correct11 = ((pred_classes==ons)&(labels.to(device)==ons)).sum() #原标签为1，预测为1
+        FP += train_correct01
+        FN += train_correct10
+        TP += train_correct00
+        TN += train_correct11
+
+        accu_num += (train_correct00 + train_correct11)
         data_loader.desc = "[valid epoch {}] loss: {:.3f}, acc: {:.3f}".format(epoch,
                                                                                accu_loss.item() / (step + 1),
                                                                                accu_num.item() / sample_num)
 
-    return accu_loss.item() / (step + 1), accu_num.item() / sample_num
+    return accu_loss.item() / (step + 1), accu_num.item() / sample_num, TN.item(), FN.item(), FP.item(), TP.item(), FN_imgs, FP_imgs
