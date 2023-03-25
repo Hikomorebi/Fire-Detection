@@ -10,3 +10,10 @@ VIT/results/
 VIT/weights/
 VIT/runs/
 VIT/test.py
+FireNetV1/__pycache__/
+FireNetV1/error/
+FireNetV1/models/
+FireNetV1/results/
+FireNetV1/runs/
+FireNetV1/class_indices.json
+
