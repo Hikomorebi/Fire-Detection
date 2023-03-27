@@ -25,3 +25,4 @@ FireNetV2/class_indices.json
 FireNetV2/test.py
 FireNetV2/train.log
 data/
+AA-Wide-ResNet/__pycache__
