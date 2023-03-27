@@ -16,4 +16,12 @@ FireNetV1/models/
 FireNetV1/results/
 FireNetV1/runs/
 FireNetV1/class_indices.json
-
+FireNetV2/__pycache__/
+FireNetV2/error/
+FireNetV2/models/
+FireNetV2/results/
+FireNetV2/runs/
+FireNetV2/class_indices.json
+FireNetV2/test.py
+FireNetV2/train.log
+data/
