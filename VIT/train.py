@@ -16,7 +16,6 @@ from utils import read_split_data, read_data, train_one_epoch, evaluate
 
 
 def main(args):
-
     acc_list_train = []
     acc_list_val = []
     FP_list = []
@@ -24,7 +23,9 @@ def main(args):
     Recall_list = []
     Precision_list = []
     F_list = []
-    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+    best_acc = 0
+    index = -1
 
     if os.path.exists("./weights") is False:
         os.makedirs("./weights")
@@ -54,7 +55,7 @@ def main(args):
                             transform=data_transform["val"])
 
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 0])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -72,23 +73,23 @@ def main(args):
 
     model = create_model(num_classes=args.num_classes, has_logits=False).to(device)
 
-    if args.weights != "":
-        assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-        weights_dict = torch.load(args.weights, map_location=device)
-        # 删除不需要的权重
-        del_keys = ['head.weight', 'head.bias'] if model.has_logits \
-            else ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
-        for k in del_keys:
-            del weights_dict[k]
-        print(model.load_state_dict(weights_dict, strict=False))
+    # if args.weights != "":
+    #     assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
+    #     weights_dict = torch.load(args.weights, map_location=device)
+    #     # 删除不需要的权重
+    #     del_keys = ['head.weight', 'head.bias'] if model.has_logits \
+    #         else ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
+    #     for k in del_keys:
+    #         del weights_dict[k]
+    #     print(model.load_state_dict(weights_dict, strict=False))
 
-    if args.freeze_layers:
-        for name, para in model.named_parameters():
-            # 除head, pre_logits外，其他权重全部冻结
-            if "head" not in name and "pre_logits" not in name:
-                para.requires_grad_(False)
-            else:
-                print("training {}".format(name))
+    # if args.freeze_layers:
+    #     for name, para in model.named_parameters():
+    #         # 除head, pre_logits外，其他权重全部冻结
+    #         if "head" not in name and "pre_logits" not in name:
+    #             para.requires_grad_(False)
+    #         else:
+    #             print("training {}".format(name))
 
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-5)
@@ -107,10 +108,15 @@ def main(args):
         scheduler.step()
 
         # validate
-        val_loss, val_acc, TN, FN, FP, TP, FN_imgs, FP_imgs = evaluate(model=model,
+        val_loss, val_acc, TN, FN, FP, TP, FN_imgs_temp, FP_imgs_temp = evaluate(model=model,
                                                      data_loader=val_loader,
                                                      device=device,
                                                      epoch=epoch)
+        if val_acc > best_acc:
+            index = epoch
+            best_acc = val_acc
+            FN_imgs = FN_imgs_temp
+            FP_imgs = FP_imgs_temp
         acc_list_train.append(train_acc)
         acc_list_val.append(val_acc)
         FP_list.append(round(FP/(FP+TN+TP+FN),4))
@@ -127,7 +133,7 @@ def main(args):
         tb_writer.add_scalar(tags[3], val_acc, epoch)
         tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
-        torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
+        #torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
 
     x = [i for i in range(args.epochs)]
     plt.figure(figsize = (10,12))
@@ -136,7 +142,7 @@ def main(args):
     plt.ylabel('accuracy')
     plt.xlabel("epoch")
     plt.savefig('./results/figure.png')
-    index = acc_list_val.index(max(acc_list_val))
+    print("index:\t\t",index)
     print("Accuracy:\t %.4f"%acc_list_val[index])
     print("False Positives:",FP_list[index])
     print("Fales Negatives:",FN_list[index])
@@ -161,8 +167,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=2)
-    parser.add_argument('--epochs', type=int, default=8)
-    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)
 
@@ -173,11 +179,10 @@ if __name__ == '__main__':
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='/home/hkb/MyFireNet/VIT/weights/vit_base_patch16_224_in21k.pth',
+    parser.add_argument('--weights', type=str, default='',
                         help='initial weights path')
     # 是否冻结权重
-    parser.add_argument('--freeze-layers', type=bool, default=True)
-    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+    parser.add_argument('--freeze-layers', type=bool, default=False)
 
     opt = parser.parse_args()
 
