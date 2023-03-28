@@ -21,7 +21,7 @@ from utils import read_split_data, read_data, train_one_epoch, evaluate
 def main():
     learning_rate = 0.001
     num_classes = 2
-    epochs = 100
+    epochs = 300
     batch_size = 32
     IMG_SIZE = 64
     data_path = '/home/hkb/MyFireNet/Datasets/MyDatasets/'
@@ -117,7 +117,7 @@ def main():
         tb_writer.add_scalar(tags[3], val_acc, epoch)
         tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
-        torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
+        #torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
 
     assert index != -1
     x = [i for i in range(epochs)]

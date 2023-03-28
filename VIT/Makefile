@@ -5,3 +5,4 @@ clean:
 	rm -rf ./models/*
 	rm -rf ./results/*
 	rm -f ./train.log
+	rm -rf ./__pycache__
