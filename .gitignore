@@ -28,3 +28,8 @@ FireNetV2/train.log
 AA-ResNet/__pycache__
 AA-ResNet/AA-Wide-ResNet/data/
 AA-ResNet/AA-Wide-ResNet/__pycache__/
+AA-ResNet/AA-Wide-ResNet/class_indices.json
+AA-ResNet/AA-Wide-ResNet/results/
+AA-ResNet/AA-Wide-ResNet/reporting/
+AA-ResNet/AA-Wide-ResNet/error/
+AA-ResNet/AA-Wide-ResNet/train.log
