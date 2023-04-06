@@ -21,7 +21,7 @@ from utils import read_split_data, read_data, train_one_epoch, evaluate
 def main():
     learning_rate = 0.001
     num_classes = 2
-    epochs = 100
+    epochs = 500
     batch_size = 32
     IMG_SIZE = 64
     data_path = '/home/hkb/MyFireNet/Datasets/MyDatasets/'
@@ -34,7 +34,7 @@ def main():
     F_list = []
     best_acc = 0
     index = -1
-    device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
 
     tb_writer = SummaryWriter()
@@ -117,7 +117,7 @@ def main():
         tb_writer.add_scalar(tags[3], val_acc, epoch)
         tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
-        torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
+        #torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
 
     assert index != -1
     x = [i for i in range(epochs)]

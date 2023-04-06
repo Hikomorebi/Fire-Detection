@@ -1,4 +1,4 @@
-clean:
+clean:	
 	rm -rf ./runs
 	rm -f ./class_indices.json
 	rm -rf ./error/*
