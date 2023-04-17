@@ -6,7 +6,6 @@ import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import matplotlib.pyplot as plt
-from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 
@@ -23,14 +22,13 @@ def main(args):
     Recall_list = []
     Precision_list = []
     F_list = []
-    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     best_acc = 0
     index = -1
 
     if os.path.exists("./weights") is False:
         os.makedirs("./weights")
 
-    tb_writer = SummaryWriter()
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_data(args.data_path)
 
@@ -38,11 +36,11 @@ def main(args):
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
                                      transforms.RandomHorizontalFlip(),
                                      transforms.ToTensor(),
-                                     transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]),
+                                     transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])]),
         "val": transforms.Compose([transforms.Resize(256),
                                    transforms.CenterCrop(224),
                                    transforms.ToTensor(),
-                                   transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])}
+                                   transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])])}
 
     # 实例化训练数据集
     train_dataset = MyDataSet(images_path=train_images_path,
@@ -55,7 +53,7 @@ def main(args):
                             transform=data_transform["val"])
 
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 0])  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -73,23 +71,23 @@ def main(args):
 
     model = create_model(num_classes=args.num_classes, has_logits=False).to(device)
 
-    # if args.weights != "":
-    #     assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-    #     weights_dict = torch.load(args.weights, map_location=device)
-    #     # 删除不需要的权重
-    #     del_keys = ['head.weight', 'head.bias'] if model.has_logits \
-    #         else ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
-    #     for k in del_keys:
-    #         del weights_dict[k]
-    #     print(model.load_state_dict(weights_dict, strict=False))
+    if args.weights != "":
+        assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
+        weights_dict = torch.load(args.weights, map_location=device)
+        # 删除不需要的权重
+        del_keys = ['head.weight', 'head.bias'] if model.has_logits \
+            else ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
+        for k in del_keys:
+            del weights_dict[k]
+        print(model.load_state_dict(weights_dict, strict=False))
 
-    # if args.freeze_layers:
-    #     for name, para in model.named_parameters():
-    #         # 除head, pre_logits外，其他权重全部冻结
-    #         if "head" not in name and "pre_logits" not in name:
-    #             para.requires_grad_(False)
-    #         else:
-    #             print("training {}".format(name))
+    if args.freeze_layers:
+        for name, para in model.named_parameters():
+            # 除head, pre_logits外，其他权重全部冻结
+            if "head" not in name and "pre_logits" not in name:
+                para.requires_grad_(False)
+            else:
+                print("training {}".format(name))
 
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.SGD(pg, lr=args.lr, momentum=0.9, weight_decay=5E-5)
@@ -126,15 +124,10 @@ def main(args):
         Recall_list.append(round(R,4))
         Precision_list.append(round(P,4))
         F_list.append(round(((2*P*R)/(P+R)),4))
-        tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
-        tb_writer.add_scalar(tags[0], train_loss, epoch)
-        tb_writer.add_scalar(tags[1], train_acc, epoch)
-        tb_writer.add_scalar(tags[2], val_loss, epoch)
-        tb_writer.add_scalar(tags[3], val_acc, epoch)
-        tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
         #torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
-
+    if not os.path.exists('./results'):
+        os.mkdir('./results')
     x = [i for i in range(args.epochs)]
     plt.figure(figsize = (10,12))
     plt.plot(x,acc_list_train,'r',x,acc_list_val,'g')
@@ -149,7 +142,9 @@ def main(args):
     print("Recall:\t\t",Recall_list[index])
     print("Precision:\t",Precision_list[index])
     print("F-measure:\t",F_list[index])
-
+    
+    if not os.path.exists('./error'):
+        os.mkdir('./error')
     # 存储错误分类的图像
     FN_img_path = './error/FN'
     FP_img_path = './error/FP'
@@ -167,23 +162,18 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=2)
-    parser.add_argument('--epochs', type=int, default=150)
+    parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)
-
-    # 数据集所在根目录
-    # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
-    parser.add_argument('--data-path', type=str,
-                        default="/home/hkb/MyFireNet/Datasets/MyDatasets")
+    parser.add_argument('--data-path', type=str,default="/home/hkb/MyFireNet/Datasets/MyDatasets")
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='',
-                        help='initial weights path')
+    parser.add_argument('--weights', type=str, default='',help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
-
+    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
     opt = parser.parse_args()
 
     main(opt)

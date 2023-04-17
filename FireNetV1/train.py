@@ -4,12 +4,7 @@ import argparse
 import shutil
 import torch
 import torch.nn as nn
-
-import torch.optim as optim
-import torch.optim.lr_scheduler as lr_scheduler
 import matplotlib.pyplot as plt
-import numpy as np
-from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 
@@ -22,7 +17,7 @@ from utils import read_split_data, read_data, train_one_epoch, evaluate
 def main():
     learning_rate = 0.001
     num_classes = 2
-    epochs = 100
+    epochs = 200
     batch_size = 32
     IMG_SIZE = 64
     data_path = '/home/hkb/MyFireNet/Datasets/MyDatasets/'
@@ -35,10 +30,9 @@ def main():
     F_list = []
     best_acc = 0
     index = -1
-    device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
-    tb_writer = SummaryWriter()
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_data(data_path)
 
@@ -46,11 +40,11 @@ def main():
         "train": transforms.Compose([transforms.RandomResizedCrop(IMG_SIZE),
                                      transforms.RandomHorizontalFlip(),
                                      transforms.ToTensor(),
-                                     transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]),
+                                     transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])]),
         "val": transforms.Compose([transforms.Resize(72),
                                    transforms.CenterCrop(IMG_SIZE),
                                    transforms.ToTensor(),
-                                   transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])}
+                                   transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])])}
 
     # 实例化训练数据集
     train_dataset = MyDataSet(images_path=train_images_path,
@@ -62,7 +56,7 @@ def main():
                             images_class=val_images_label,
                             transform=data_transform["val"])
 
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 0])  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -111,15 +105,10 @@ def main():
         Recall_list.append(round(R,4))
         Precision_list.append(round(P,4))
         F_list.append(round(((2*P*R)/(P+R)),4))
-        tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
-        tb_writer.add_scalar(tags[0], train_loss, epoch)
-        tb_writer.add_scalar(tags[1], train_acc, epoch)
-        tb_writer.add_scalar(tags[2], val_loss, epoch)
-        tb_writer.add_scalar(tags[3], val_acc, epoch)
-        tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
-        torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
-
+        #torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
+    if not os.path.exists('./results'):
+        os.mkdir('./results')
     assert index != -1
     x = [i for i in range(epochs)]
     plt.figure(figsize = (10,12))
@@ -139,6 +128,8 @@ def main():
     print("F-measure:\t",F_list[index])
 
     # 存储错误分类的图像
+    if not os.path.exists('./error'):
+        os.mkdir('./error')
     FN_img_path = './error/FN'
     FP_img_path = './error/FP'
     if not os.path.exists(FN_img_path):

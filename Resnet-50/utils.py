@@ -138,22 +138,22 @@ def read_data(root: str):
     assert len(train_images_path) > 0, "number of training images must greater than 0."
     assert len(val_images_path) > 0, "number of validation images must greater than 0."
 
-    # plot_image = False
-    # if plot_image:
-    #     # 绘制每种类别个数柱状图
-    #     plt.bar(range(len(fire_class)), every_class_num, align='center')
-    #     # 将横坐标0,1,2,3,4替换为相应的类别名称
-    #     plt.xticks(range(len(fire_class)), fire_class)
-    #     # 在柱状图上添加数值标签
-    #     for i, v in enumerate(every_class_num):
-    #         plt.text(x=i, y=v + 5, s=str(v), ha='center')
-    #     # 设置x坐标
-    #     plt.xlabel('image class')
-    #     # 设置y坐标
-    #     plt.ylabel('number of images')
-    #     # 设置柱状图的标题
-    #     plt.title('fire class distribution')
-    #     plt.show()
+    plot_image = False
+    if plot_image:
+        # 绘制每种类别个数柱状图
+        plt.bar(range(len(fire_class)), every_class_num, align='center')
+        # 将横坐标0,1,2,3,4替换为相应的类别名称
+        plt.xticks(range(len(fire_class)), fire_class)
+        # 在柱状图上添加数值标签
+        for i, v in enumerate(every_class_num):
+            plt.text(x=i, y=v + 5, s=str(v), ha='center')
+        # 设置x坐标
+        plt.xlabel('image class')
+        # 设置y坐标
+        plt.ylabel('number of images')
+        # 设置柱状图的标题
+        plt.title('fire class distribution')
+        plt.show()
 
     return train_images_path, train_images_label, val_images_path, val_images_label
 
