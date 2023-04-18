@@ -6,7 +6,7 @@ import torch.optim as optim
 from torchvision import transforms
 import matplotlib.pyplot as plt
 from my_dataset import MyDataSet
-from model import swin_base_patch4_window7_224 as create_model
+from model import swin_base_patch4_window7_224_in22k as create_model
 from utils import read_split_data, train_one_epoch, evaluate, read_data
 
 
@@ -22,22 +22,21 @@ def main(args):
     best_acc = 0
     index = -1
 
-    if os.path.exists("./weights") is False:
-        os.makedirs("./weights")
+    if os.path.exists("./models") is False:
+        os.makedirs("./models")
 
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_data(args.data_path)
 
-    img_size = 224
     data_transform = {
-        "train": transforms.Compose([transforms.RandomResizedCrop(img_size),
+        "train": transforms.Compose([transforms.RandomResizedCrop(224),
                                      transforms.RandomHorizontalFlip(),
                                      transforms.ToTensor(),
-                                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
-        "val": transforms.Compose([transforms.Resize(int(img_size * 1.143)),
-                                   transforms.CenterCrop(img_size),
+                                     transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])]),
+        "val": transforms.Compose([transforms.Resize(256),
+                                   transforms.CenterCrop(224),
                                    transforms.ToTensor(),
-                                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
+                                   transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])])}
 
     # 实例化训练数据集
     train_dataset = MyDataSet(images_path=train_images_path,
@@ -50,7 +49,7 @@ def main(args):
                             transform=data_transform["val"])
 
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 0])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -106,6 +105,11 @@ def main(args):
             best_acc = val_acc
             FN_imgs = FN_imgs_temp
             FP_imgs = FP_imgs_temp
+            if os.listdir('./models'):
+                for filename in os.listdir('./models'):
+                    file_path = os.path.join('./models', filename)
+                    os.remove(file_path)
+            torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
         acc_list_train.append(train_acc)
         acc_list_val.append(val_acc)
         FP_list.append(round(FP/(FP+TN+TP+FN),4))
@@ -116,7 +120,6 @@ def main(args):
         Precision_list.append(round(P,4))
         F_list.append(round(((2*P*R)/(P+R)),4))
 
-        #torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
     if not os.path.exists('./results'):
         os.mkdir('./results')
     x = [i for i in range(args.epochs)]
@@ -150,19 +153,20 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=2)
-    parser.add_argument('--epochs', type=int, default=20)
+    parser.add_argument('--epochs', type=int, default=80)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=0.0001)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
-    parser.add_argument('--data-path', type=str,default="/home/hkb/MyFireNet/Datasets/MyDatasets")
+    parser.add_argument('--data-path', type=str,default="/home/hkb/Fire-Detection/Datasets/BigDatasets")
+    # parser.add_argument('--data-path', type=str,default="/home/hkb/Fire-Detection/Datasets/LightDataset")
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='./swin_base_patch4_window7_224.pth',help='initial weights path')
+    parser.add_argument('--weights', type=str, default='/home/hkb/Fire-Detection/SwinTransformer/weights/swin_base_patch4_window7_224_22k.pth',help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
-    parser.add_argument('--device', default='cuda:2', help='device id (i.e. 0 or 0,1 or cpu)')
+    parser.add_argument('--device', default='cuda:1', help='device id (i.e. 0 or 0,1 or cpu)')
 
     opt = parser.parse_args()
 
