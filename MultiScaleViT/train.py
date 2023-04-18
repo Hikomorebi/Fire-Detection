@@ -36,11 +36,13 @@ def main(args):
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
                                      transforms.RandomHorizontalFlip(),
                                      transforms.ToTensor(),
-                                     transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])]),
+                                     transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])]),
+                                     #transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])]),
         "val": transforms.Compose([transforms.Resize(256),
                                    transforms.CenterCrop(224),
                                    transforms.ToTensor(),
-                                   transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])])}
+                                   transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])])}
+                                   #transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])])}
 
     # 实例化训练数据集
     train_dataset = MyDataSet(images_path=train_images_path,
@@ -169,14 +171,15 @@ if __name__ == '__main__':
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
-    parser.add_argument('--data-path', type=str, default="/home/hkb/MyFireNet/Datasets/MyDatasets")
+    parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/BigDatasets")
+    #parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/LightDataset")
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str, default='', help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
-    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+    parser.add_argument('--device', default='cuda:3', help='device id (i.e. 0 or 0,1 or cpu)')
     opt = parser.parse_args()
 
     main(opt)
