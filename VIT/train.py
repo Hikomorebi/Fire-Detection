@@ -36,11 +36,11 @@ def main(args):
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
                                      transforms.RandomHorizontalFlip(),
                                      transforms.ToTensor(),
-                                     transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])]),
+                                     transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])]),
         "val": transforms.Compose([transforms.Resize(256),
                                    transforms.CenterCrop(224),
                                    transforms.ToTensor(),
-                                   transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])])}
+                                   transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])])}
 
     # 实例化训练数据集
     train_dataset = MyDataSet(images_path=train_images_path,
@@ -162,15 +162,16 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=2)
-    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--epochs', type=int, default=60)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)
-    parser.add_argument('--data-path', type=str,default="/home/hkb/MyFireNet/Datasets/MyDatasets")
+    parser.add_argument('--data-path', type=str,default="/home/hkb/Fire-Detection/Datasets/BigDatasets")
+    # parser.add_argument('--data-path', type=str,default="/home/hkb/Fire-Detection/Datasets/LightDataset")
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='',help='initial weights path')
+    parser.add_argument('--weights', type=str, default='/home/hkb/Fire-Detection/VIT/weights/vit_base_patch16_224_in21k.pth',help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
