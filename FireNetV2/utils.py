@@ -201,7 +201,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch):
     optimizer.zero_grad()
 
     sample_num = 0
-    data_loader = tqdm(data_loader, file=sys.stdout)
+    data_loader = tqdm(data_loader, file=sys.stdout,mininterval=8)
     for step, data in enumerate(data_loader):
         images, labels,img_paths = data
         sample_num += images.shape[0]
@@ -242,7 +242,7 @@ def evaluate(model, data_loader, device, epoch):
     accu_loss = torch.zeros(1).to(device)  # 累计损失
 
     sample_num = 0
-    data_loader = tqdm(data_loader, file=sys.stdout)
+    data_loader = tqdm(data_loader, file=sys.stdout,mininterval=8)
     FN_imgs = []
     FP_imgs = []
     for step, data in enumerate(data_loader):

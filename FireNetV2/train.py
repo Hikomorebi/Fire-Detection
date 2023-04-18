@@ -18,10 +18,10 @@ from utils import read_split_data, read_data, train_one_epoch, evaluate
 def main():
     learning_rate = 0.001
     num_classes = 2
-    epochs = 500
+    epochs = 200
     batch_size = 32
     IMG_SIZE = 64
-    data_path = '/home/hkb/MyFireNet/Datasets/MyDatasets/'
+    data_path = '/home/hkb/Fire-Detection/Datasets/BigDatasets'
     acc_list_train = []
     acc_list_val = []
     FP_list = []
@@ -40,11 +40,13 @@ def main():
         "train": transforms.Compose([transforms.RandomResizedCrop(IMG_SIZE),
                                      transforms.RandomHorizontalFlip(),
                                      transforms.ToTensor(),
-                                     transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])]),
+                                     transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])]),
+                                     #transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])]),
         "val": transforms.Compose([transforms.Resize(72),
                                    transforms.CenterCrop(IMG_SIZE),
                                    transforms.ToTensor(),
-                                   transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])])}
+                                   transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])])}
+                                   #transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])])}
 
     # 实例化训练数据集
     train_dataset = MyDataSet(images_path=train_images_path,
