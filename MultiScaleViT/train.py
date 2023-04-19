@@ -26,8 +26,8 @@ def main(args):
     best_acc = 0
     index = -1
 
-    if os.path.exists("./weights") is False:
-        os.makedirs("./weights")
+    if os.path.exists("./models") is False:
+        os.makedirs("./models")
 
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_data(args.data_path)
@@ -118,6 +118,11 @@ def main(args):
             best_acc = val_acc
             FN_imgs = FN_imgs_temp
             FP_imgs = FP_imgs_temp
+            if os.listdir('./models'):
+                for filename in os.listdir('./models'):
+                    file_path = os.path.join('./models', filename)
+                    os.remove(file_path)
+            torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
         acc_list_train.append(train_acc)
         acc_list_val.append(val_acc)
         FP_list.append(round(FP/(FP+TN+TP+FN),4))
@@ -164,22 +169,22 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=2)
-    parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--epochs', type=int, default=1)
+    parser.add_argument('--batch-size', type=int, default=2)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
-    parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/BigDatasets")
-    #parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/LightDataset")
+    #parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/BigDatasets")
+    parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/LightDatasets")
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str, default='', help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
-    parser.add_argument('--device', default='cuda:3', help='device id (i.e. 0 or 0,1 or cpu)')
+    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
     opt = parser.parse_args()
 
     main(opt)

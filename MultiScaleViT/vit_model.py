@@ -194,12 +194,12 @@ class VisionTransformer(nn.Module):
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
         act_layer = act_layer or nn.GELU
 
-        #self.patch_embed = embed_layer(img_size=img_size, patch_size=patch_size, in_c=in_c, embed_dim=embed_dim)
-        #num_patches = self.patch_embed.num_patches
+        self.patch_embed = embed_layer(img_size=img_size, patch_size=patch_size, in_c=in_c, embed_dim=embed_dim)
+        num_patches = self.patch_embed.num_patches
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.dist_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if distilled else None
-        self.pos_embed = nn.Parameter(torch.zeros(1, 196 + self.num_tokens, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + self.num_tokens, embed_dim))
         self.pos_drop = nn.Dropout(p=drop_ratio)
 
         dpr = [x.item() for x in torch.linspace(0, drop_path_ratio, depth)]  # stochastic depth decay rule
@@ -239,7 +239,7 @@ class VisionTransformer(nn.Module):
 
     def forward_features(self, x):
         # [B, C, H, W] -> [B, num_patches, embed_dim]
-        # x = self.patch_embed(x)  # [B, 196, 768]
+        x = self.patch_embed(x)  # [B, 196, 768]
         # [1, 1, 768] -> [B, 1, 768]
         cls_token = self.cls_token.expand(x.shape[0], -1, -1)
         if self.dist_token is None:
@@ -285,6 +285,4 @@ def _init_vit_weights(m):
     elif isinstance(m, nn.LayerNorm):
         nn.init.zeros_(m.bias)
         nn.init.ones_(m.weight)
-
-
 

@@ -25,17 +25,17 @@ class MutilScaleViT(nn.Module):
     def __init__(self, num_classes=2):
         super(MutilScaleViT, self).__init__()
         self.multi_scale_extractor = MultiScaleFeatureExtractor()
-        for name, p in self.multi_scale_extractor.named_parameters():
-            print(name)
-            p.requires_grad = False
-        self.positional_encoding = nn.Parameter(torch.randn(1, 197, 768))
-        self.vit = VisionTransformer(img_size=224,
-                                    patch_size=16,
-                                    embed_dim=1792,
+        for p in self.multi_scale_extractor.parameters():
+            p.requires_grad_(False)
+        self.vit = VisionTransformer(img_size=14,
+                                    patch_size=1,
+                                    in_c=1792,
+                                    embed_dim=768,
                                     depth=12,
-                                    num_heads=16,
+                                    num_heads=12,
                                     representation_size = None,
                                     num_classes=num_classes)
+                                    
         self.layer1 = nn.Conv2d(256, 256, kernel_size=4, stride=4, padding=0)
         self.layer2 = nn.Conv2d(512, 512, kernel_size=2, stride=2, padding=0)
         #self.vit = VisionTransformer(img_size=224, patch_size=16, embed_dim=768, num_classes=num_classes)
@@ -47,7 +47,7 @@ class MutilScaleViT(nn.Module):
         x = torch.cat([torch.flatten(x1, start_dim=2),
                        torch.flatten(x2, start_dim=2),
                        torch.flatten(x3, start_dim=2)], dim=1)
-        x = x.permute(0, 2, 1)  # 转换维度以匹配 VisionTransformer 的输入
+        #x = x.permute(0, 2, 1)  # 转换维度以匹配 VisionTransformer 的输入
         #x += self.positional_encoding
         x = self.vit(x)
         return x
