@@ -44,9 +44,7 @@ class MutilScaleViT(nn.Module):
         x1, x2, x3 = self.multi_scale_extractor(x)
         x1 = self.layer1(x1)
         x2 = self.layer2(x2)
-        x = torch.cat([torch.flatten(x1, start_dim=2),
-                       torch.flatten(x2, start_dim=2),
-                       torch.flatten(x3, start_dim=2)], dim=1)
+        x = torch.cat([x1,x2,x3], dim=1)
         #x = x.permute(0, 2, 1)  # 转换维度以匹配 VisionTransformer 的输入
         #x += self.positional_encoding
         x = self.vit(x)
