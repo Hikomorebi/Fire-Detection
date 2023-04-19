@@ -55,7 +55,7 @@ def main(args):
                             transform=data_transform["val"])
 
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 2])  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 4])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -78,10 +78,10 @@ def main(args):
         weights_dict = torch.load(args.weights, map_location=device)
         # 删除不需要的权重
         del_keys = ['head.weight', 'head.bias'] if model.has_logits \
-            else ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
+            else ['head.weight', 'head.bias','patch_embed.proj.weight','patch_embed.proj.bias','pre_logits.fc.weight', 'pre_logits.fc.bias']
         for k in del_keys:
             del weights_dict[k]
-        print(model.load_state_dict(weights_dict, strict=False))
+        print(model.vit.load_state_dict(weights_dict, strict=False))
 
     if args.freeze_layers:
         for name, para in model.named_parameters():
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='', help='initial weights path')
+    parser.add_argument('--weights', type=str, default='/home/hkb/Fire-Detection/VIT/weights/vit_base_patch16_224_in21k.pth', help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')

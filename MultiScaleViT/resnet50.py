@@ -25,8 +25,8 @@ class MutilScaleViT(nn.Module):
     def __init__(self, num_classes=2):
         super(MutilScaleViT, self).__init__()
         self.multi_scale_extractor = MultiScaleFeatureExtractor()
-        for p in self.multi_scale_extractor.parameters():
-            p.requires_grad_(False)
+        # for p in self.multi_scale_extractor.parameters():
+        #     p.requires_grad_(False)
         self.vit = VisionTransformer(img_size=14,
                                     patch_size=1,
                                     in_c=1792,
@@ -50,7 +50,13 @@ class MutilScaleViT(nn.Module):
         x = self.vit(x)
         return x
 
-# x = torch.rand(5, 3, img_size, img_size)
-# model = MutilScaleViT(2)
-# x = model(x)
-# print(x)
+if __name__ == '__main__':
+    A = MutilScaleViT()
+
+    weights_dict = torch.load("/home/hkb/Fire-Detection/VIT/weights/vit_base_patch16_224_in21k.pth")
+
+    del_keys = ['head.weight', 'head.bias','patch_embed.proj.weight','patch_embed.proj.bias','pre_logits.fc.weight', 'pre_logits.fc.bias']
+    for k in del_keys:
+        del weights_dict[k]
+    print(A.vit.load_state_dict(weights_dict, strict=False))
+
