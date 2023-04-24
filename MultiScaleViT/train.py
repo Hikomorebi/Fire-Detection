@@ -77,8 +77,7 @@ def main(args):
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
         weights_dict = torch.load(args.weights, map_location=device)
         # 删除不需要的权重
-        del_keys = ['head.weight', 'head.bias'] if model.has_logits \
-            else ['head.weight', 'head.bias','patch_embed.proj.weight','patch_embed.proj.bias','pre_logits.fc.weight', 'pre_logits.fc.bias']
+        del_keys = ['head.weight', 'head.bias','patch_embed.proj.weight','patch_embed.proj.bias','pre_logits.fc.weight', 'pre_logits.fc.bias']
         for k in del_keys:
             del weights_dict[k]
         print(model.vit.load_state_dict(weights_dict, strict=False))
@@ -169,22 +168,22 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=2)
-    parser.add_argument('--epochs', type=int, default=1)
-    parser.add_argument('--batch-size', type=int, default=2)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
-    #parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/BigDatasets")
-    parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/LightDatasets")
+    parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/BigDatasets")
+    #parser.add_argument('--data-path', type=str, default="/home/hkb/Fire-Detection/Datasets/LightDatasets")
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str, default='/home/hkb/Fire-Detection/VIT/weights/vit_base_patch16_224_in21k.pth', help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
-    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+    parser.add_argument('--device', default='cuda:2', help='device id (i.e. 0 or 0,1 or cpu)')
     opt = parser.parse_args()
 
     main(opt)

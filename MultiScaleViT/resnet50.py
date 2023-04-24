@@ -50,13 +50,13 @@ class MutilScaleViT(nn.Module):
         x = self.vit(x)
         return x
 
-if __name__ == '__main__':
-    A = MutilScaleViT()
+# if __name__ == '__main__':
+    # A = MutilScaleViT()
 
-    weights_dict = torch.load("/home/hkb/Fire-Detection/VIT/weights/vit_base_patch16_224_in21k.pth")
+    # weights_dict = torch.load("/home/hkb/Fire-Detection/VIT/weights/vit_base_patch16_224_in21k.pth")
 
-    del_keys = ['head.weight', 'head.bias','patch_embed.proj.weight','patch_embed.proj.bias','pre_logits.fc.weight', 'pre_logits.fc.bias']
-    for k in del_keys:
-        del weights_dict[k]
-    print(A.vit.load_state_dict(weights_dict, strict=False))
+    # del_keys = ['head.weight', 'head.bias','patch_embed.proj.weight','patch_embed.proj.bias','pre_logits.fc.weight', 'pre_logits.fc.bias']
+    # for k in del_keys:
+    #     del weights_dict[k]
+    # print(A.vit.load_state_dict(weights_dict, strict=False))
 

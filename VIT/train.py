@@ -178,7 +178,7 @@ if __name__ == '__main__':
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str, default='/home/hkb/Fire-Detection/VIT/weights/vit_base_patch16_224_in21k.pth',help='initial weights path')
     # 是否冻结权重
-    parser.add_argument('--freeze-layers', type=bool, default=True)
+    parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
     opt = parser.parse_args()
 
