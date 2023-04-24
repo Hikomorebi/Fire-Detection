@@ -29,7 +29,7 @@ class Resnet50(nn.Module):
 
 
 def main():
-    epochs = 5
+    epochs = 50
     acc_list_train = []
     acc_list_val = []
     FP_list = []
@@ -41,7 +41,7 @@ def main():
     index = -1
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     batch_size = 32
-    data_path = '/home/hkb/MyFireNet/Datasets/MyDatasets'
+    data_path = '/home/hkb/Fire-Detection/Datasets/BigDatasets'
     
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -65,7 +65,7 @@ def main():
     val_dataset = MyDataSet(images_path=val_images_path,
                             images_class=val_images_label,
                             transform=data_transform["val"])
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 0])  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 4])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
 
     train_loader = torch.utils.data.DataLoader(train_dataset,
