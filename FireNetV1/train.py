@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 from torchvision import transforms
+import torchvision.models as models
 
 
 from my_dataset import MyDataSet
@@ -17,10 +18,10 @@ from utils import read_split_data, read_data, train_one_epoch, evaluate
 def main():
     learning_rate = 0.001
     num_classes = 2
-    epochs = 200
+    epochs = 300
     batch_size = 32
     IMG_SIZE = 64
-    data_path = '/home/hkb/MyFireNet/Datasets/MyDatasets/'
+    data_path = '/home/hkb/Fire-Detection/Datasets/BigDatasets'
     acc_list_train = []
     acc_list_val = []
     FP_list = []
@@ -40,11 +41,11 @@ def main():
         "train": transforms.Compose([transforms.RandomResizedCrop(IMG_SIZE),
                                      transforms.RandomHorizontalFlip(),
                                      transforms.ToTensor(),
-                                     transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])]),
+                                     transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])]),
         "val": transforms.Compose([transforms.Resize(72),
                                    transforms.CenterCrop(IMG_SIZE),
                                    transforms.ToTensor(),
-                                   transforms.Normalize([0.441, 0.351, 0.288], [0.286, 0.261, 0.261])])}
+                                   transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])])}
 
     # 实例化训练数据集
     train_dataset = MyDataSet(images_path=train_images_path,
@@ -56,7 +57,7 @@ def main():
                             images_class=val_images_label,
                             transform=data_transform["val"])
 
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 4])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -105,7 +106,13 @@ def main():
         Recall_list.append(round(R,4))
         Precision_list.append(round(P,4))
         F_list.append(round(((2*P*R)/(P+R)),4))
-
+        print(epoch)
+        print("Accuracy:\t %.4f"%acc_list_val[epoch])
+        print("False Positives:",FP_list[epoch])
+        print("Fales Negatives:",FN_list[epoch])
+        print("Recall:\t\t",Recall_list[epoch])
+        print("Precision:\t",Precision_list[epoch])
+        print("F-measure:\t",F_list[epoch])
         #torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
     if not os.path.exists('./results'):
         os.mkdir('./results')

@@ -129,6 +129,13 @@ def main(args):
         Recall_list.append(round(R,4))
         Precision_list.append(round(P,4))
         F_list.append(round(((2*P*R)/(P+R)),4))
+        print("index:\t\t",epoch)
+        print("Accuracy:\t %.4f"%acc_list_val[epoch])
+        print("False Positives:",FP_list[epoch])
+        print("Fales Negatives:",FN_list[epoch])
+        print("Recall:\t\t",Recall_list[epoch])
+        print("Precision:\t",Precision_list[epoch])
+        print("F-measure:\t",F_list[epoch])
 
         #torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
     if not os.path.exists('./results'):
@@ -167,7 +174,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--num_classes', type=int, default=2)
-    parser.add_argument('--epochs', type=int, default=40)
+    parser.add_argument('--epochs', type=int, default=60)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)

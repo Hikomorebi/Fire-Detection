@@ -1,35 +1,18 @@
 import os
-import sys
-import json
-
+import math
+import argparse
+import shutil
 import torch
-import torch.nn as nn
 import torch.optim as optim
-from torchvision import transforms, datasets
-from tqdm import tqdm
-from torchvision.models import resnet50
+import torch.optim.lr_scheduler as lr_scheduler
+import matplotlib.pyplot as plt
+from torchvision import transforms
+import torch.nn as nn
 from my_dataset import MyDataSet
 from utils import read_split_data, read_data, train_one_epoch, evaluate
-import matplotlib.pyplot as plt
-import shutil
+import torchvision.models as models
 
-
-class Resnet50(nn.Module):
-    def __init__(self):
-        super(Resnet50, self).__init__()
-        self.resnet = resnet50(pretrained=True)
-        self.layer1 = nn.ReLU()
-        self.layer2 = nn.Linear(1000, 2)
-
-    def forward(self, x):
-        x = self.resnet(x)
-        x = self.layer1(x)
-        x = self.layer2(x)
-        return x
-
-
-def main():
-    epochs = 40
+def main(args):
     acc_list_train = []
     acc_list_val = []
     FP_list = []
@@ -37,13 +20,16 @@ def main():
     Recall_list = []
     Precision_list = []
     F_list = []
+    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     best_acc = 0
     index = -1
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
-    batch_size = 32
-    data_path = '/home/hkb/Fire-Detection/Datasets/BigDatasets'
-    
+
+    if os.path.exists("./models") is False:
+        os.makedirs("./models")
+
+
+    train_images_path, train_images_label, val_images_path, val_images_label = read_data(args.data_path)
+
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
                                      transforms.RandomHorizontalFlip(),
@@ -54,10 +40,7 @@ def main():
                                    transforms.ToTensor(),
                                    transforms.Normalize([0.444, 0.385, 0.348], [0.286, 0.275, 0.283])])}
 
-
-
-
-    train_images_path, train_images_label, val_images_path, val_images_label = read_data(data_path)
+    # 实例化训练数据集
     train_dataset = MyDataSet(images_path=train_images_path,
                               images_class=train_images_label,
                               transform=data_transform["train"])
@@ -66,9 +49,11 @@ def main():
     val_dataset = MyDataSet(images_path=val_images_path,
                             images_class=val_images_label,
                             transform=data_transform["val"])
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 4])  # number of workers
-    print('Using {} dataloader workers every process'.format(nw))
 
+    batch_size = args.batch_size
+    nw = 8
+    #nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 4])  # number of workers
+    print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
                                                shuffle=True,
@@ -82,26 +67,13 @@ def main():
                                              pin_memory=True,
                                              num_workers=nw,
                                              collate_fn=val_dataset.collate_fn)
-    
-    model = Resnet50().to(device)
-    # load pretrain weights
-    # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
 
-    # for param in net.parameters():
-    #     param.requires_grad = False
+    model = models.vgg16(pretrained=True)
+    model.classifier[-1] = nn.Linear(4096, 2)
+    model = model.to(device)
+    optimizer = optim.SGD(model.parameters(), lr=0.0001)
 
-    # change fc layer structure
-
-
-    # define loss function
-    loss_function = nn.CrossEntropyLoss()
-
-    # construct an optimizer
-    params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.Adam(params, lr=0.0001)
-    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
-
-    for epoch in range(epochs):
+    for epoch in range(args.epochs):
         # train
         train_loss, train_acc = train_one_epoch(model=model,
                                                 optimizer=optimizer,
@@ -115,11 +87,16 @@ def main():
                                                      data_loader=val_loader,
                                                      device=device,
                                                      epoch=epoch)
-
-        index = epoch
-        best_acc = val_acc
-        FN_imgs = FN_imgs_temp
-        FP_imgs = FP_imgs_temp
+        if val_acc > best_acc:
+            index = epoch
+            best_acc = val_acc
+            FN_imgs = FN_imgs_temp
+            FP_imgs = FP_imgs_temp
+            if os.listdir('./models'):
+                for filename in os.listdir('./models'):
+                    file_path = os.path.join('./models', filename)
+                    os.remove(file_path)
+            torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
         acc_list_train.append(train_acc)
         acc_list_val.append(val_acc)
         FP_list.append(round(FP/(FP+TN+TP+FN),4))
@@ -129,13 +106,17 @@ def main():
         Recall_list.append(round(R,4))
         Precision_list.append(round(P,4))
         F_list.append(round(((2*P*R)/(P+R)),4))
-        tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
-
-
+        print("index:\t\t",epoch)
+        print("Accuracy:\t %.4f"%acc_list_val[epoch])
+        print("False Positives:",FP_list[epoch])
+        print("Fales Negatives:",FN_list[epoch])
+        print("Recall:\t\t",Recall_list[epoch])
+        print("Precision:\t",Precision_list[epoch])
+        print("F-measure:\t",F_list[epoch])
         #torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
     if not os.path.exists('./results'):
         os.mkdir('./results')
-    x = [i for i in range(epochs)]
+    x = [i for i in range(args.epochs)]
     plt.figure(figsize = (10,12))
     plt.plot(x,acc_list_train,'r',x,acc_list_val,'g')
     plt.title('train(red) val(green)')
@@ -149,10 +130,10 @@ def main():
     print("Recall:\t\t",Recall_list[index])
     print("Precision:\t",Precision_list[index])
     print("F-measure:\t",F_list[index])
-
-    # 存储错误分类的图像
+    
     if not os.path.exists('./error'):
         os.mkdir('./error')
+    # 存储错误分类的图像
     FN_img_path = './error/FN'
     FP_img_path = './error/FP'
     if not os.path.exists(FN_img_path):
@@ -164,11 +145,18 @@ def main():
     for img_path in FP_imgs:
         shutil.copy(img_path, FP_img_path)
 
-    print('Finished Training')
-
-
-
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--num_classes', type=int, default=2)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--data-path', type=str,default="/home/hkb/Fire-Detection/Datasets/BigDatasets")
+    #parser.add_argument('--data-path', type=str,default="/home/hkb/Fire-Detection/Datasets/LightDatasets")
+    parser.add_argument('--model-name', default='', help='create model name')
+
+    parser.add_argument('--device', default='cuda', help='device id (i.e. 0 or 0,1 or cpu)')
+    opt = parser.parse_args()
+
+    main(opt)

@@ -18,7 +18,7 @@ from utils import read_split_data, read_data, train_one_epoch, evaluate
 def main():
     learning_rate = 0.001
     num_classes = 2
-    epochs = 200
+    epochs = 300
     batch_size = 32
     IMG_SIZE = 64
     data_path = '/home/hkb/Fire-Detection/Datasets/BigDatasets'
@@ -31,7 +31,7 @@ def main():
     F_list = []
     best_acc = 0
     index = -1
-    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_data(data_path)
@@ -58,7 +58,7 @@ def main():
                             images_class=val_images_label,
                             transform=data_transform["val"])
 
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 4])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -107,7 +107,13 @@ def main():
         Recall_list.append(round(R,4))
         Precision_list.append(round(P,4))
         F_list.append(round(((2*P*R)/(P+R)),4))
-
+        print(epoch)
+        print("Accuracy:\t %.4f"%acc_list_val[epoch])
+        print("False Positives:",FP_list[epoch])
+        print("Fales Negatives:",FN_list[epoch])
+        print("Recall:\t\t",Recall_list[epoch])
+        print("Precision:\t",Precision_list[epoch])
+        print("F-measure:\t",F_list[epoch])
 
         #torch.save(model.state_dict(), "./models/model-{}.pth".format(epoch))
     if not os.path.exists('./results'):
@@ -149,4 +155,4 @@ def main():
 if __name__ == '__main__':
     print("开始训练：")
     main()
-    print("在MyDataset上使用FirenetV2进行实验")
+

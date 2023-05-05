@@ -61,3 +61,13 @@ FireNetV2/weights/*
 FireNetV2/test.py
 FireNetV2/train.log
 FireNetV2/__pycache__/
+
+VGG16/runs/
+VGG16/class_indices.json
+VGG16/error/*
+VGG16/models/*
+VGG16/results/*
+VGG16/weights/*
+VGG16/test.py
+VGG16/train.log
+VGG16/__pycache__/
