@@ -71,3 +71,13 @@ VGG16/weights/*
 VGG16/test.py
 VGG16/train.log
 VGG16/__pycache__/
+
+MobileNet/runs/
+MobileNet/class_indices.json
+MobileNet/error/*
+MobileNet/models/*
+MobileNet/results/*
+MobileNet/weights/*
+MobileNet/test.py
+MobileNet/train.log
+MobileNet/__pycache__/
