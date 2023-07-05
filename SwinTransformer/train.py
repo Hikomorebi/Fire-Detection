@@ -49,7 +49,7 @@ def main(args):
                             transform=data_transform["val"])
 
     batch_size = args.batch_size
-    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 4])  # number of workers
+    nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 2])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
     train_loader = torch.utils.data.DataLoader(train_dataset,
                                                batch_size=batch_size,
@@ -159,14 +159,14 @@ if __name__ == '__main__':
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
-    parser.add_argument('--data-path', type=str,default="/home/hkb/Fire-Detection/Datasets/BigDatasets")
+    parser.add_argument('--data-path', type=str,default="/home/hkb/Fire-Detection/Datasets/RealDatasets")
     # parser.add_argument('--data-path', type=str,default="/home/hkb/Fire-Detection/Datasets/LightDataset")
 
     # 预训练权重路径，如果不想载入就设置为空字符
     parser.add_argument('--weights', type=str, default='/home/hkb/Fire-Detection/SwinTransformer/weights/swin_base_patch4_window7_224_22k.pth',help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
-    parser.add_argument('--device', default='cuda:1', help='device id (i.e. 0 or 0,1 or cpu)')
+    parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
 
     opt = parser.parse_args()
 
